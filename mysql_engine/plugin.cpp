@@ -314,7 +314,7 @@ static int pinba_engine_init(void *p)
 	}
 
 	auto *h = static_cast<handlerton*>(p);
-	h->state = SHOW_OPTION_YES;
+	// h->state = SHOW_OPTION_YES; // mariadb has removed this it seems (checked on 10.11.8)
 	h->flags = HTON_ALTER_NOT_SUPPORTED | HTON_NO_PARTITION | HTON_TEMPORARY_NOT_SUPPORTED;
 	h->create = [](handlerton *hton, TABLE_SHARE *table, MEM_ROOT *mem_root) -> handler* {
 		return new (mem_root) pinba_handler_t(hton, table);

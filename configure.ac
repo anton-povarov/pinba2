@@ -1,31 +1,29 @@
-AC_INIT([pinba], [2.6.0])
+AC_INIT([pinba],[2.6.0])
+AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/globals.cpp])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
-AM_CONFIG_HEADER([auto_config.h])
+AC_CONFIG_HEADERS([auto_config.h])
 AX_PREFIX_CONFIG_H([pinba_config.h])
 AX_CONFIG_NICE([config.nice])
-AM_INIT_AUTOMAKE
 
 ${CFLAGS=""}
 AC_PROG_CC
 ${CXXFLAGS=""}
 AC_PROG_CXX
 
-AC_PROG_LIBTOOL
+LT_INIT
 LIBTOOL="$LIBTOOL --preserve-dup-deps"
 AC_SUBST(LIBTOOL)
 
 AC_C_CONST
 AC_TYPE_SIZE_T
-AC_HEADER_STDC
+
 AC_CHECK_FUNCS(memcpy memmove)
 AC_CHECK_TYPES([uint16_t])     # defined in C99 systems
 AC_CHECK_TYPES([u_int16_t])    # defined in BSD-derived systems, and gnu
 AC_CHECK_TYPES([long long])    # probably defined everywhere, but...
 AC_CHECK_HEADERS(inttypes.h stdint.h unistd.h)
-AC_PROG_SED
-dnl AC_PROG_AWK
 
 AC_CHECK_FUNCS([sysconf recvmmsg])
 
@@ -35,11 +33,20 @@ common_flags=" -pthread"
 # common_flags="$common_flags -Wextra"   # even worse
 common_flags="$common_flags -Wformat -Wformat-security"
 common_flags="$common_flags -Werror"
+common_flags="$common_flags -Wno-nonnull" # strftime
 common_flags="$common_flags -Wno-unused -Wno-unused-parameter -Wno-unused-variable -Wno-missing-field-initializers -Wno-parentheses"
 common_flags="$common_flags -fno-omit-frame-pointer"
 common_flags="$common_flags -fPIC -DPIC"
 common_flags="$common_flags -D_GNU_SOURCE -D_POSIX_SOURCE"
-common_flags="$common_flags -maes -msse4 -msse4.2"
+common_flags="$common_flags -march=native"
+
+case $host_cpu in
+	x86_64)
+		common_flags="$common_flags -maes -msse4 -msse4.2"
+		;;
+	*)
+		;;
+esac
 
 AX_CFLAGS="-std=gnu11 $common_flags"
 AX_CXXFLAGS="-std=c++14 -fno-rtti $common_flags"
@@ -116,7 +123,7 @@ AC_MSG_CHECKING([if compiler supports -R])
 AC_CACHE_VAL(pinba_cv_cc_dashr,[
 	SAVE_LIBS=$LIBS
 	LIBS="-R /usr/$LIBDIR $LIBS"
-	AC_TRY_LINK([], [], pinba_cv_cc_dashr=yes, pinba_cv_cc_dashr=no)
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[pinba_cv_cc_dashr=yes],[pinba_cv_cc_dashr=no])
 	LIBS=$SAVE_LIBS])
 AC_MSG_RESULT([$pinba_cv_cc_dashr])
 if test $pinba_cv_cc_dashr = "yes"; then
@@ -126,7 +133,7 @@ else
 	AC_CACHE_VAL(pinba_cv_cc_rpath,[
 		SAVE_LIBS=$LIBS
 		LIBS="-Wl,-rpath,/usr/$LIBDIR $LIBS"
-		AC_TRY_LINK([], [], pinba_cv_cc_rpath=yes, pinba_cv_cc_rpath=no)
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[pinba_cv_cc_rpath=yes],[pinba_cv_cc_rpath=no])
 		LIBS=$SAVE_LIBS])
 	AC_MSG_RESULT([$pinba_cv_cc_rpath])
 	if test $pinba_cv_cc_rpath = "yes"; then
@@ -193,7 +200,7 @@ else
 	CXXFLAGS="$MYSQL_INC"
 
 	AC_MSG_CHECKING([for MySQL version >= 5.1])
-	AC_TRY_RUN([
+	AC_RUN_IFELSE([AC_LANG_SOURCE([[
 		#include <stdlib.h>
 		#include <stdio.h>
 		#include <mysql_version.h>
@@ -205,9 +212,7 @@ else
 			exit(1);
 		#endif
 		}
-	],
-	[ AC_MSG_RESULT([ok]) ],
-	[ AC_MSG_ERROR([MySQL 5.1+ is required])])
+	]])],[ AC_MSG_RESULT([ok]) ],[ AC_MSG_ERROR([MySQL 5.1+ is required])],[])
 
 	CFLAGS="$CFLAGS_old"
 	CXXFLAGS="$CXXFLAGS_old"
@@ -324,4 +329,5 @@ AC_SUBST(INSTALL_STRIP_FLAG)
 
 AC_SUBST(EXPERIMENT_DIR)
 
-AC_OUTPUT([Makefile src/Makefile include/Makefile mysql_engine/Makefile experiments/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile include/Makefile mysql_engine/Makefile experiments/Makefile])
+AC_OUTPUT
