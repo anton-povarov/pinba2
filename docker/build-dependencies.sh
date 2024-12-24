@@ -7,7 +7,11 @@ cmake .
 # don't want to build the whole thing, it takes a long time, just what we need
 make -C libservices
 # boost tries to include this file globally and includes this one; but mariadb needs this to install
+# mv+rm is a workaround for docker build-ing on macos case-insensitive fs
+#  VERSION and version are the same file and mv actually leads to both files existing at the same time
+#  so rm it to avoid the issue with boost described above
 mv VERSION VERSION.backup
+rm -f VERSION
 # make mysqld_error.h available in non-esoteric location
 ln -snf /_src/mariadb/libmariadb/include/mysqld_error.h include/mysqld_error.h
 

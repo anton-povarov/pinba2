@@ -64,23 +64,20 @@ We've got some scripts to help [in scripts directory](scripts).
 Convert mysqldump of your old tables to new format with [this script](scripts/convert_mysqldump.php).
 
 
-
-More Info
+Installation
 --------
-
-- [TODO](TODO.md)
+- [Dockerfile](Dockerfile) based on Ubuntu 24.04 LTS\
+  something like: `docker build -t pinba2:latest .`
 - [Building](docs/index.md#building) - use docker, really
 - [Installing](docs/index.md#installation) - use docker, really
 - [Configuration](docs/index.md#configuration) - optional, should run fine with default settings
+
+
+More Info
+--------
+- [TODO](TODO.md)
 - [User-defined reports + examples](#user-defined-reports)
 
-
-Docker
-------
-
-### Fedora 25
-
-[`Dockerfile`](Dockerfile)
 
 Basics
 ------
