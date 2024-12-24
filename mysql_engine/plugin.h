@@ -4,9 +4,13 @@
 #include "mysql_engine/pinba_mysql.h"
 
 #ifdef PINBA_USE_MYSQL_SOURCE
+#	include <my_global.h>
+#	include <my_sys.h>
 #	include <mysql_version.h>
 #	include <mysql/plugin.h>
 #else
+#	include <mysql/my_global.h>
+#	include <mysql/my_sys.h>
 #	include <mysql/mysql_version.h>
 #	include <mysql/plugin.h>
 #endif // PINBA_USE_MYSQL_SOURCE

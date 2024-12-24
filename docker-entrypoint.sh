@@ -5,19 +5,13 @@
 
 if [ $1 = "mysqld" ]; then
 
-	# fedora mysqld is in special location
-	ln -snf /usr/libexec/mysqld /usr/local/bin
-
-	# disable gss auth as it's not installed in this container
-	rm -rf /etc/my.cnf.d/auth_gssapi.cnf
-
-	# create default databases
-	# too expensive to perform on container startup really
-	mysql_install_db --rpm
-	chmod -R 777 /var/lib/mysql
+	# create dir where mysql.sock will be located
+	rundir=$(dirname `mysql_config --socket`)
+	mkdir -p $rundir
+	chmod 777 $rundir
 
 	# start mysql server in background for init process
-	"$@" --skip-networking -umysql &
+	"$@" --skip-networking -umysql --plugin-maturity=unknown &
 	pid="$!"
 
 	# legen.... wait for it
@@ -65,4 +59,7 @@ if [ $1 = "mysqld" ]; then
 	fi
 fi
 
-exec "$@" -umysql
+exec "$@" -umysql \
+	--port=3306 \
+	--socket=`mysql_config --socket` \
+	--plugin-maturity=unknown

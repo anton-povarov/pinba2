@@ -1,64 +1,61 @@
-FROM fedora:25 as builder
+FROM ubuntu:24.04 AS builder
 
-# https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#sort-multi-line-arguments
-RUN dnf install -y \
-    autoconf \
-    automake \
-    boost-devel \
-    cmake \
-    dnf-plugins-core \
-    file \
-    gcc \
-    gcc-c++ \
-    git-core \
-    hostname \
-    libtool \
-    mariadb-devel-3:10.1.26-2.fc25.x86_64 \
-    mariadb-server-3:10.1.26-2.fc25.x86_64 \
-    rpm-build
+SHELL [ "/bin/bash", "-c" ]
 
-RUN	dnf builddep -y \
-    mariadb
+ARG NANOMSG_VERSION=1.2.1
+ARG LZ4_VERSION=1.10.0
 
-RUN         useradd builder -u 1000 -m -G users,wheel && \
-            mkdir /home/builder/rpm && \
-            chown -R builder /home/builder
+COPY <<EOF /etc/apt/sources.list.d/universe_src.sources
+Types: deb-src
+URIs: http://archive.ubuntu.com/ubuntu/
+Suites: noble-updates
+Components: universe
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+EOF
 
-COPY        --chown=builder:root ./docker/.rpmmacros /home/builder/.rpmmacros
-COPY        --chown=root:root ./docker/sudoers /etc/sudoers
+RUN apt-get update && apt-get install -y \
+    apt-src \
+    ca-certificates \
+    libboost-dev \
+    git \
+    curl
 
-USER		builder
-WORKDIR		/home/builder
+# USER		ubuntu
+WORKDIR		/_src
 
-RUN			dnf download --source mariadb-10.1.26-2.fc25.src
-RUN			rpm -i mariadb*.rpm
+RUN apt-get build-dep -y mariadb-server
+RUN apt-get source -y mariadb-server && \
+    MARIADB_VERSION=$(apt-cache showsrc mariadb-server | grep '^Version:' | head -n1 | cut -d':' -f3 | cut -d '-' -f1) && \
+    mv mariadb-$MARIADB_VERSION mariadb
 
-WORKDIR		/home/builder/rpm
-RUN			rpmbuild --nocheck -bi mariadb.spec
-
-USER 		root
-WORKDIR		/root
-
-# TODO: Create v1.0.0 release and use it instead
+# Download code dependencies
 RUN git clone --branch master --single-branch --depth 1 https://github.com/anton-povarov/meow /_src/meow
-# https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#using-pipes
-# TODO: Set SHELL instead
-RUN set -o pipefail && curl -L https://github.com/nanomsg/nanomsg/archive/1.1.5.tar.gz | tar xvz -C /tmp && mv -v /tmp/nanomsg-1.1.5 /_src/nanomsg
-RUN set -o pipefail && curl -L https://github.com/lz4/lz4/archive/v1.9.1.tar.gz | tar xvz -C /tmp && mv -v /tmp/lz4-1.9.1 /_src/lz4
+
+RUN curl -L https://github.com/nanomsg/nanomsg/archive/refs/tags/${NANOMSG_VERSION}.tar.gz | \
+    tar xvz -C /tmp && \
+    mv -v /tmp/nanomsg-${NANOMSG_VERSION} /_src/nanomsg
+
+RUN curl -L https://github.com/lz4/lz4/archive/refs/tags/v${LZ4_VERSION}.tar.gz | \
+    tar xvz -C /tmp && \
+    mv -v /tmp/lz4-${LZ4_VERSION} /_src/lz4
+
 COPY . /_src/pinba2
-RUN /_src/pinba2/docker/build-from-source.sh
+RUN /_src/pinba2/docker/build-dependencies.sh
+RUN /_src/pinba2/docker/build-pinba.sh
 
-FROM fedora:25
-MAINTAINER Anton Povarov "anton.povarov@gmail.com"
+FROM ubuntu:24.04
 
-RUN dnf install -y \
+# libmariadb-dev-compat - for mysql_config
+RUN apt-get update && apt-get install -y \
     file \
     hostname \
-    jemalloc \
-    mariadb-server-3:10.1.26-2.fc25.x86_64
+    libjemalloc2 \
+    libjemalloc-dev \
+    libmariadb-dev-compat \
+    mariadb-server
 
-COPY --from=builder /_src/pinba2/mysql_engine/.libs/libpinba_engine2.so /usr/lib64/mysql/plugin/libpinba_engine2.so
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY --from=builder /_src/pinba2/mysql_engine/.libs/libpinba_engine2.so /usr/lib/mysql/plugin/
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 # TODO: Add bats based health check for exposed ports

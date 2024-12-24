@@ -14,10 +14,12 @@
 #ifdef PINBA_USE_MYSQL_SOURCE
 #include <sql/field.h> // <mysql/private/field.h>
 #include <sql/handler.h> // <mysql/private/handler.h>
-#include <include/mysqld_error.h> // <mysql/mysqld_error.h>
+#include <sql/table.h> // <mysql/private/handler.h>
+#include <mysqld_error.h> // <mysql/mysqld_error.h>
 #else
 #include <mysql/private/field.h>
 #include <mysql/private/handler.h>
+#include <mysql/private/table.h>
 #include <mysql/mysqld_error.h>
 #endif // PINBA_USE_MYSQL_SOURCE
 
@@ -150,9 +152,9 @@ struct pinba_view___stats_t : public pinba_view___base_t
 
 		// mark all fields as writeable to avoid assert() in ::store() calls
 		// got no idea how to do this properly anyway
-		auto *old_map = dbug_tmp_use_all_columns(table, table->write_set);
+		auto *old_map = dbug_tmp_use_all_columns(table, &table->write_set);
 		MEOW_DEFER(
-			dbug_tmp_restore_column_map(table->write_set, old_map);
+			dbug_tmp_restore_column_map(&table->write_set, old_map);
 		);
 
 		for (Field **field = table->field; *field; field++)
@@ -404,9 +406,9 @@ private:
 
 		// mark all fields as writeable to avoid assert() in ::store() calls
 		// got no idea how to do this properly anyway
-		auto *old_map = dbug_tmp_use_all_columns(table, table->write_set);
+		auto *old_map = dbug_tmp_use_all_columns(table, &table->write_set);
 		MEOW_DEFER(
-			dbug_tmp_restore_column_map(table->write_set, old_map);
+			dbug_tmp_restore_column_map(&table->write_set, old_map);
 		);
 
 		for (Field **field = table->field; *field; field++)
@@ -765,9 +767,9 @@ private:
 
 		// mark all fields as writeable to avoid assert() in ::store() calls
 		// got no idea how to do this properly anyway
-		auto *old_map = dbug_tmp_use_all_columns(table, table->write_set);
+		auto *old_map = dbug_tmp_use_all_columns(table, &table->write_set);
 		MEOW_DEFER(
-			dbug_tmp_restore_column_map(table->write_set, old_map);
+			dbug_tmp_restore_column_map(&table->write_set, old_map);
 		);
 
 		for (Field **field = table->field; *field; field++)

@@ -5,8 +5,10 @@
 #include "mysql_engine/view_conf.h"
 
 #ifdef PINBA_USE_MYSQL_SOURCE
+#include <my_global.h>
 #include <sql/handler.h>
 #else
+#include <mysql/my_global.h>
 #include <mysql/private/handler.h>
 #endif // PINBA_USE_MYSQL_SOURCE
 
