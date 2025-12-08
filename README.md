@@ -1,13 +1,14 @@
 Pinba2
 ======
 
-An attempt to rethink internal implementation and some features of excellent https://github.com/tony2001/pinba_engine by @tony2001.
-
-
 Pinba (PHP Is Not A Bottleneck Anymore) is a statistics server using MySQL as an interface.
 
 It accumulates and processes data sent over UDP and displays statistics in human-readable form of simple "reports" (like what are my slowest scripts or sql queries).
 This is not limited to PHP, there are clients for multiple languages and nginx module.
+
+This is version 2.
+Initially designed as a rethink of the internals and some features of the https://github.com/tony2001/pinba_engine by @tony2001.
+The redesign goal is to improve performance, cpu and memory scalability and simplify operations.
 
 
 Key differences from original implementation
