@@ -7,8 +7,10 @@ It accumulates and processes data sent over UDP and displays statistics in human
 This is not limited to PHP, there are clients for multiple languages and nginx module.
 
 This is version 2.
-Initially designed as a rethink of the internals and some features of the https://github.com/tony2001/pinba_engine by @tony2001.
+Designed as a rethink of the internals and some features of the https://github.com/tony2001/pinba_engine by @tony2001.
 The redesign goal is to improve performance, cpu and memory scalability and simplify operations.
+
+This repo is forked from badoo/pinba2 that I developed during my time there. All further development and build updates are going to be implemented in this repo.
 
 
 Key differences from original implementation
@@ -28,14 +30,13 @@ Key differences from original implementation
     - no 'pools' to configure, aka no re-configuration is required when traffic grows
     - no limits on tag name/value sizes (but keep it reasonable)
 - aggregation performance improved, reduced cpu/memory usage
-    - currently handles ~72k simple packets/sec (~200mbps) with 5 medium-complexity reports (4 keys aggregation) @ ~40% overall cpu usage
     - handles up to 1.4 million packets/sec (~3 gbps) on internal setups on commodity hardware from 2015
     - uses significantly less memory (orders of magnitude) for common cases, since we don't store raw requests by default
-    - current goal is to be able to handle 10gpbs of incoming traffic with hundreds of reports
+    - designed to handle 10gpbs of incoming traffic (~3 mil packets/sec) with hundreds of reports enabled
 - select performance - might be slower
   - selects from complex reports never slow down new data aggregation
   - selects in general will be slower for complex reports with thousands of rows and high percision percentiles
-    - select * from 30k rows report without percentiles takes at least ~200 milliseconds or so
+    - select * from 300k rows report without percentiles takes at least ~200 milliseconds or so
     - with percentiles (say histogram with 10k entries) - will add ~300ms to that
 - misc
   - traffic and memory_footprint are measured in bytes (original pinba truncates to kilobytes)
